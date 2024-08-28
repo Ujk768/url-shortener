@@ -1,20 +1,23 @@
 package main
 
 import (
-	"fmt"
-	"io"
+	// "fmt"
+	// "io"
+	"log"
 	"net/http"
+	"os"
+
+	"github.com/Ujk768/url-shortener/handlers"
 )
 
 func main() {
-	fmt.Println("Hello Go...")
-	http.HandleFunc("/", func(rw http.ResponseWriter, rq *http.Request) {
-		reqBody, err := io.ReadAll(rq.Body)
-		if err != nil {
-			fmt.Println("Error in handleFunc")
-		}
-		fmt.Fprintf(rw, "Hi from HandleFunc %s", reqBody)
-	})
-	// sm := http.NewServeMux()
-	http.ListenAndServe(":8080", nil)
+	l := log.New(os.Stdout, "url-shortener", log.LstdFlags)
+	//initialzed new handler
+	sh := handlers.NewRedirection(l)
+	// initialized new servMux
+	sm := http.NewServeMux()
+
+	sm.Handle("/", sh)
+
+	http.ListenAndServe(":8080", sm)
 }
