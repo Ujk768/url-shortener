@@ -44,8 +44,10 @@ func ShortenURL(longurl string) string {
 
 func (s *Shortner) ServeHTTP(rw http.ResponseWriter, rq *http.Request) {
 	s.l.Println("Inside Shortner Handler")
-	s.AddUrl(rw, rq)
-
+	if rq.Method == http.MethodPost {
+		s.AddUrl(rw, rq)
+	}
+	rw.WriteHeader(http.StatusMethodNotAllowed)
 }
 
 func (s *Shortner) AddUrl(rw http.ResponseWriter, rq *http.Request) {

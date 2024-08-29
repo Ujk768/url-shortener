@@ -22,29 +22,27 @@ func (s *Redirection) ServeHTTP(rw http.ResponseWriter, rq *http.Request) {
 		s.getRedirection(rw, rq)
 		return
 	}
-	// Modify to list
-	if rq.Method == http.MethodPut {
-
-	}
-	//delete from list
-	if rq.Method == http.MethodDelete {
-
-	}
+	rw.WriteHeader(http.StatusMethodNotAllowed)
 
 }
 
 func (s *Redirection) getRedirection(rw http.ResponseWriter, rq *http.Request) {
 
 	s.l.Println("Inisde Get Redirection Handler")
-	d := &data.GetRequestRedirection{}
-	err := d.FromJSONRedirection(rq.Body)
+	// d := &data.GetRequestRedirection{}
+	// err := d.FromJSONRedirection(rq.Body)
+	shortUrl := rq.URL.Path
+	shortUrl = shortUrl[1:]
+	s.l.Println("URL PATH", shortUrl)
 
-	ru, err := data.GetRedirectionURL(d.ShortenUrl)
+	ru, err := data.GetRedirectionURL(shortUrl)
 	if err != nil {
 		http.Error(rw, "Unable to find URL", http.StatusNotFound)
 	}
-	redirectUrl := ru.Domain + ru.LongURL
+	sd := data.CleanDomain(ru.Domain)
+	s.l.Println("sanitized DOMAIN", sd)
+	redirectUrl := "https://" + sd + ru.LongURL
 	fmt.Println("RedirectionURL", redirectUrl)
-	http.RedirectHandler(redirectUrl, http.StatusTemporaryRedirect)
+	http.Redirect(rw, rq, redirectUrl, http.StatusTemporaryRedirect)
 
 }

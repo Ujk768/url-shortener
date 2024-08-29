@@ -6,6 +6,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"net/url"
+	"strings"
 )
 
 type UrlMapping struct {
@@ -124,4 +126,17 @@ func ShortenURL(longurl string) string {
 	// Truncate the encoded string to the first 6 characters
 	shortURL := encodedString[:6]
 	return shortURL
+}
+
+func CleanDomain(domain string) string {
+	parsedUrl, err := url.Parse(domain)
+	if err != nil {
+		return domain // return as-is if parsing fails
+	}
+
+	// If the scheme exists, strip it
+	if parsedUrl.Scheme != "" {
+		return strings.TrimPrefix(domain, parsedUrl.Scheme+"://")
+	}
+	return domain
 }
