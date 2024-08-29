@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"fmt"
 	"log"
 	"net/http"
 
@@ -25,10 +26,6 @@ func (s *Redirection) ServeHTTP(rw http.ResponseWriter, rq *http.Request) {
 	if rq.Method == http.MethodPut {
 
 	}
-	//add a url
-	if rq.Method == http.MethodPost {
-
-	}
 	//delete from list
 	if rq.Method == http.MethodDelete {
 
@@ -46,7 +43,8 @@ func (s *Redirection) getRedirection(rw http.ResponseWriter, rq *http.Request) {
 	if err != nil {
 		http.Error(rw, "Unable to find URL", http.StatusNotFound)
 	}
-
-	http.Redirect(rw, rq, ru.LongURL, http.StatusTemporaryRedirect)
+	redirectUrl := ru.Domain + ru.LongURL
+	fmt.Println("RedirectionURL", redirectUrl)
+	http.RedirectHandler(redirectUrl, http.StatusTemporaryRedirect)
 
 }

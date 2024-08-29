@@ -6,11 +6,11 @@ import (
 	"log"
 	"net/http"
 
-	// "github.com/Ujk768/url-shortener/data"
+	"github.com/Ujk768/url-shortener/data"
 )
 
 type GetRequest struct {
-	OriginalUrl string 
+	OriginalUrl string
 	Domain      string
 }
 
@@ -21,6 +21,10 @@ type GetResponse struct {
 
 type Shortner struct {
 	l *log.Logger
+}
+
+func NewShortner(l *log.Logger) *Shortner {
+	return &Shortner{l}
 }
 
 // longurl -> shorturl
@@ -39,7 +43,20 @@ func ShortenURL(longurl string) string {
 }
 
 func (s *Shortner) ServeHTTP(rw http.ResponseWriter, rq *http.Request) {
-	  s.l.Println("Inside Shortner Handler")
-	
+	s.l.Println("Inside Shortner Handler")
+	s.AddUrl(rw, rq)
 
+}
+
+func (s *Shortner) AddUrl(rw http.ResponseWriter, rq *http.Request) {
+	d := &data.GetRequestShortern{}
+	err := d.FromJSON(rq.Body)
+	if err != nil {
+		http.Error(rw, "Unable to Unmarshal JSON", http.StatusBadRequest)
+	}
+	nu := data.AddURL(d.LongURL, d.Domain)
+	err = nu.ToJSON(rw)
+	if err != nil {
+		http.Error(rw, "Unable to marshal JSON", http.StatusInternalServerError)
+	}
 }

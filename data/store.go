@@ -1,6 +1,8 @@
 package data
 
 import (
+	"crypto/sha1"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -8,10 +10,12 @@ import (
 
 type UrlMapping struct {
 	OriginalUrl string
+	Domain      string
 }
 
 type GetRequestShortern struct {
-	longURL string
+	LongURL string `json:"longUrl"`
+	Domain  string `json:"domain"`
 }
 
 type GetResponseShorten struct {
@@ -24,6 +28,7 @@ type GetRequestRedirection struct {
 
 type GetResponseRedirection struct {
 	LongURL string `json:"longUrl"`
+	Domain  string `json:"domain"`
 }
 
 var urlList = make(map[string]UrlMapping)
@@ -31,9 +36,36 @@ var urlList = make(map[string]UrlMapping)
 var ErrorNotFound = fmt.Errorf("URL Not Found")
 
 // map[short_url]= long_url
-func AddURL(longURL string, shortURL string) {
-	urlList[shortURL] = UrlMapping{
+func AddURL(longURL string, domain string) GetResponseShorten {
+	var su string
+	var exists bool
+
+	// Try generating a unique short URL
+	for i := 0; i < 5; i++ { // limiting to 5 attempts to avoid an infinite loop
+		su = ShortenURL(longURL + string(i)) // Modify the input slightly if necessary
+		_, exists = urlList[su]
+		if !exists {
+			break // If the short URL doesn't exist, we found a unique one
+		}
+	}
+
+	if exists {
+		// Handle the case where all attempts to find a unique URL failed
+		return GetResponseShorten{
+			ShortUrl: "",
+			Message:  "Failed to create a unique short URL after multiple attempts",
+		}
+	}
+
+	// Store the unique short URL
+	urlList[su] = UrlMapping{
 		OriginalUrl: longURL,
+		Domain:      domain,
+	}
+
+	return GetResponseShorten{
+		ShortUrl: su,
+		Message:  "Created new short URL",
 	}
 }
 
@@ -50,6 +82,7 @@ func GetRedirectionURL(url string) (GetResponseRedirection, error) {
 
 	return GetResponseRedirection{
 		LongURL: longurl.OriginalUrl,
+		Domain:  longurl.Domain,
 	}, nil
 
 }
@@ -76,4 +109,19 @@ func (u *GetRequestShortern) FromJSON(r io.Reader) error {
 func (g *GetRequestRedirection) FromJSONRedirection(r io.Reader) error {
 	d := json.NewDecoder(r)
 	return d.Decode(g)
+}
+
+// longurl -> shorturl
+func ShortenURL(longurl string) string {
+	// Hash the long URL using SHA-1
+	h := sha1.New()
+	h.Write([]byte(longurl))
+	d := h.Sum(nil)
+
+	// Encode the hash as a base64 string
+	encodedString := base64.URLEncoding.EncodeToString(d)
+
+	// Truncate the encoded string to the first 6 characters
+	shortURL := encodedString[:6]
+	return shortURL
 }

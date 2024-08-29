@@ -13,11 +13,12 @@ import (
 func main() {
 	l := log.New(os.Stdout, "url-shortener", log.LstdFlags)
 	//initialzed new handler
-	sh := handlers.NewRedirection(l)
+	rd := handlers.NewRedirection(l)
+	sh := handlers.NewShortner(l)
 	// initialized new servMux
 	sm := http.NewServeMux()
 
-	sm.Handle("/", sh)
-
+	sm.Handle("/", rd)
+	sm.Handle("/shorten",sh)
 	http.ListenAndServe(":8080", sm)
 }
